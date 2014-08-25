@@ -32,7 +32,7 @@ $(document).ready(function() {
 	//for navigation active hover
 	$('#nav li').each(function() {
 	    var href = $(this).find('a').attr('href');
-	    if ("/"+href === window.location.pathname) {
+	    if (href === window.location.pathname) {
 			$(this).css({
 				color: '#0084B4',
 				'border-bottom': '4px solid #0084b4',
