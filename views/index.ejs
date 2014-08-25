@@ -1,0 +1,34 @@
+<% include doctype.ejs %>
+<% include header.ejs %>
+<div id='content'>
+	<div id="container">
+		<!-- <div id="left"></div> -->
+		<% if (data.error) { %>
+		<div class='error'>
+			<div class='close'></div>
+			<span class='error_msg'><%= data.error %></span>
+		</div>
+		<% } %>
+		<% if (data.success) { %>
+		<div class='error'>
+			<div class='close'></div>
+			<span class='success_msg'><%= data.success %></span>
+		</div>
+		<% } %>
+		<div id="center">
+			<form class='form' name='form' action='/getForm' method='POST'>
+				<textarea autofocus='autofocus' name='textarea' class='textarea'><% if (data.textarea) { %><%= data.textarea %><% } %></textarea>
+				<div id='show'>
+					<input type='text' class='captcha' name='captcha_server' value='<%= data.captcha %>' readonly='readonly'>
+					<input type='text' class='captcha' name='captcha_client' placeholder='Enter the captcha'>
+					<button class='tweet_button' type='submit' name='submit'>
+						<span class='tweet_pic'></span>
+						<span class='loader'></span>
+						<span class='tweet_text'>Tweet</span>
+					</button>
+				</div>
+			</form>
+		</div>
+	</div><div class='clear'></div>
+</div>
+<% include footer.ejs %>

@@ -1,0 +1,17 @@
+<% include doctype.ejs %>
+<% include header.ejs %>
+<div id='content'>
+	<div id="container">
+		<div class='note_div'><span class='note_text'>Notifications</span></div>
+		<% if (data) {
+			for (var item in data) { %>
+			<div class="notification_center">
+				<div title='click to delete' data_id='<%= data[item].id %>' class='delete'></div>
+				<%- data[item].textarea %>
+			</div>
+		<% } } %>
+		<div class='clear'></div>
+		<div class='note_footer_div'></div>
+	</div>
+</div>
+<% include footer.ejs %>
