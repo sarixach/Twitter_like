@@ -184,8 +184,8 @@ app.use(function(req, res, next) { //404
 	res.redirect('/');
 });
 
-// module.exports = app;
+module.exports = app;
 
-app.listen(config.get('port'), function() {
-  console.log('Express server listening on port ' + config.get('port'));
-});
+// app.listen(config.get('port'), function() {
+//   console.log('Express server listening on port ' + config.get('port'));
+// });
