@@ -6,7 +6,7 @@
 		<% if (data) {
 			for (var item in data) { %>
 			<div class="notification_center">
-				<div title='click to delete' data_id='<%= data[item].id %>' class='delete'></div>
+				<div title='click to delete' data_id='<%= data[item].note_id %>' class='delete'></div>
 				<%- data[item].textarea %>
 			</div>
 		<% } } %>

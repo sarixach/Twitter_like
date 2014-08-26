@@ -47,16 +47,16 @@ router.route('/notification.html').get(function(req, res) {
 router.route('/s/:id').get(function(req, res) { //going to uri
 	var id = req.params.id;
 	if (id) {
-		Note.find({id: id}, {uri: true, _id: false}, function(err, data) {
-			res.redirect(data[0].uri);
+		Note.find({id: {'$in' : [id]}}, {_id: false, __v: false}, function(err, data) {
+			res.redirect(data[0].uri[id]);
+			// console.log(data[0].uri[id]); //data[0].textarea, data[0].uri ...
 		});
 	}
 });
 
 router.route('/delete').post(function(req, res) { //deleting note by id
 	var id = req.body.id;
-	id = Number(id);
-	Note.remove({id: id}, function(err, note) {
+	Note.remove({note_id: id}, function(err, note) {
 		if (!err) {
 			res.send('deleted');
 		}
@@ -64,7 +64,7 @@ router.route('/delete').post(function(req, res) { //deleting note by id
 });
 
 router.route('/getForm').post(function(req, res) { //getting posted information
-	if (req.session.captcha + "" === req.body.captcha_client) {
+	if (req.session.captcha == parseInt(req.body.captcha_client)) {
 		var textarea = req.body.textarea;
 
 		var new_textarea = '';
@@ -73,36 +73,57 @@ router.route('/getForm').post(function(req, res) { //getting posted information
 		var new_http_array = [];
 		var tag = [];
 		var bool = true;
-		var link = '';
+		var links = {};
 
-		var http_array = textarea.match(/(http|https:\/\/){1,}[\w,?/#=&:%.-]{1,}/gi); //this array contain links
-		textarea = textarea.replace(/(http|https:\/\/){1,}[\w,?/#=&:%.-]{1,}/gi, '*'); //textarea without links
+		var http_array = textarea.match(/(http|https:\/\/){1,}[\w,?/+~#=&:%.-]{1,}/gi); //this array contain links
+		
+		if (http_array) {
+			var http_length = http_array.length; //length of array
+		}
+		
+		var k = 0;
+		textarea = textarea.replace(/(http|https:\/\/){1,}[\w,?/+~#=&:%.-]{1,}/gi, '*'); //textarea without links
 
 		var unique_id = 0;
+		var unique_id_array = [];
+		var note_id = 0;
 
 		for (var item in http_array) (function(item, http_array) {
 			request(http_array[item], function(err, _res, body) {
 				if (!err) {
-					if (_res.headers['content-type'].match(/(image\/){1}(\w){1,}/g)) { //if image
-						new_http_array[item] = "<p><img style='max-width: 620px;' src='" + http_array[item] +"'></p>";
-					} else { //if not image
-						unique_id = Math.random().toString().substr(5, 4);
-						new_http_array[item] = "<a class='link' href='http://localhost:"+ config.get('port') +"/s/" + unique_id + "'>" + "http://localhost" + config.get('port') +"/s/" + unique_id + "</a>";
-						link = http_array[item]; //some link
+					if (_res.headers['content-type']) {
+						if (_res.headers['content-type'].match(/(image\/){1}(\w){1,}/g)) { //if image
+							new_http_array[item] = "<p><img style='max-width: 620px;' src='" + http_array[item] +"'></p>";
+						} else { //if not image
+							unique_id = Math.random().toString().substr(5, 4);
+							new_http_array[item] = "<a class='link' href='http://localhost:"+ config.get('port') +"/s/" + unique_id + "'>" + "http://localhost" + config.get('port') +"/s/" + unique_id + "</a>";
+							unique_id_array.push(unique_id);
+							links[unique_id] = http_array[item]; //some link
+						}
+					} else {
+						textarea = textarea.replace(/(\*)/, "");
 					}
+					k++;
 				}
 			});
 		})(item, http_array);
 
-		setTimeout(function() { //waiting 1 sec and continue
-			/* work here */
+		var timer = setInterval(function() { //waiting for all request
+			if (k === http_length) {
+				clearInterval(timer);
+				please_work();
+			}
+		}, 200);
 
-			for (var item in new_http_array) { //replacing * with links
-				if (bool) {
-					new_textarea = textarea.replace(/\*/, new_http_array[item]);
-					bool = false;
-				} else {
-					new_textarea = new_textarea.replace(/\*/, new_http_array[item]);
+		function please_work() { //this function must work, because...
+			if (new_http_array) {
+				for (var item in new_http_array) { //replacing * with links
+					if (bool) {
+						new_textarea = textarea.replace(/\*/, new_http_array[item]);
+						bool = false;
+					} else {
+						new_textarea = new_textarea.replace(/\*/, new_http_array[item]);
+					}
 				}
 			}
 
@@ -120,15 +141,15 @@ router.route('/getForm').post(function(req, res) { //getting posted information
 				new_textarea = new_textarea.replace(/\*/, new_tags[item]);
 			}
 
-			//new_textarea, new_tags, unique_id, tag ready to use
-
-			unique_id = Number(unique_id);
+			//new_textarea, new_tags, unique_id_array, tag, note_id,  ready to use
+			note_id = Math.random().toString().substr(5, 6);
 
 			var note = new Note({
 				textarea: new_textarea,
 				tags: tag,
-				uri: link,
-				id: unique_id
+				uri: links,
+				id: unique_id_array,
+				note_id: note_id
 			});
 
 			note.save(function(err, note) {
@@ -138,8 +159,7 @@ router.route('/getForm').post(function(req, res) { //getting posted information
 					res.render('index.ejs', {data: {success: "Notification siccessfully added :)", captcha: captcha}});
 				}
 			});
-
-		}, config.get('hold'));
+		}
 
 	} else {
 		var captcha = Math.round(100000 + Math.random() * 999999);
@@ -164,8 +184,8 @@ app.use(function(req, res, next) { //404
 	res.redirect('/');
 });
 
-module.exports = app;
+// module.exports = app;
 
-// app.listen(config.get('port'), function() {
-//   console.log('Express server listening on port ' + config.get('port'));
-// });
+app.listen(config.get('port'), function() {
+  console.log('Express server listening on port ' + config.get('port'));
+});
